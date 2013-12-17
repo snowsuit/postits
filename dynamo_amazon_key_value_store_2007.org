@@ -1,0 +1,2 @@
+#+Title: Dynamo: Amazon’s Highly Available Key-value Store
+#+Property: url http://www.allthingsdistributed.com/files/amazon-dynamo-sosp2007.pdf
