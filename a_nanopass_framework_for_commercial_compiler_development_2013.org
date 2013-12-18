@@ -1,0 +1,97 @@
+#+Title: A Nanopass Framework for Commercial Compiler Development
+#+Author: Keep, Andrew W; Dybvig, R. Kent
+#+Property: url http://www.cs.indiana.edu/~dyb/pubs/commercial-nanopass.pdf
+#+Filetags: :compilers:scheme:chez:nanopass:pattern matching:optimization:
+
+* Andrew's notes
+- Traditional compilers do lots of work in each pass, typically to save on expensive
+  disk operations.
+  - Intermediate representations typically would be written to disk between passes
+  - These become pretty complex as well, doing lots of things
+- The Nanopass framework is designed to:
+  - Separate large tasks into lots of smaller passes
+  - Support formally designed intermediate languages
+  - Support convenient pattern matching via inexpensive record dispatch
+  - Generate boilerplate code automatically
+- In 2004, the technology was passed off as not suitable for commercial purposes
+  - Assumptions based on a prototype
+  - Assumed all the extra processing and work duplication would result in 
+    significant slowdowns
+- Recent version shows promising results, 15-27% speedup in Chez Scheme's 
+  object code, at less than twice the compilation speed. 
+  - A goal is to ensure compilation times don't balloon. They've given themselves
+    2x original times.
+- Intermediate languages look something like:
+#+BEGIN_SRC: scheme
+(define-language Lsrc
+  (terminals
+   (uvar (x))
+   (primitive (pr))
+   (datum (d)))
+  (Expr (e body)
+        x
+        (quote d)
+        (if e0 e1 e2)
+        (begin e* ... e)
+        (lambda (x* ...) body)
+        (let ([x* e*] ...) body)
+        (letrec ([x* e*] ...) body)
+        (set! x e)
+        (pr e* ...)
+        (call e e* ...) => (e e* ...)))
+#+END_SRC
+
+  - "Inheritance" via =(extends)= form, which just replaces, or adds rules
+    like in a typical OO language.
+- Passes defined by taking a src intermediate language and producing a new
+  intermediate language (as defined by a define-language form.
+  - Can define helpers
+  - match clauses take non-terminals (and guards) and produce productions in
+    target language.
+- Old Chez compiler layout 
+  - 10 multi-purpose "passes"
+  - Written in Scheme
+  - Can compile itself in 3 seconds
+  - Frontend
+    - Macro expansion to simplified core-language
+    - record debugging information
+    - validate letrec, letrec* bindings
+    - mess with letrec, letrec* with some optimizations
+    - either interpret, or compiler invoked
+  - Backend (compiler)
+    - Code now roughly the same as original source
+    - 5 passes
+      - closure conversion, recognizes loops, direct applications,
+        multiple return call handling, ffi, low level inline calls
+      - start allocating registers, flag tail calls, loops, closure
+        optimization, assignment conversion...
+      - 2 more passes of assignment and register allocation
+      - some other optimizations
+    - Fairly simple, linear register allocator
+- New compiler built on nanopass
+  - Same front end passes, just updated to use nanopass
+  - Backend structured as 50 passes
+    - 35 different languages
+    - Only most of the optimizations from the original compiler
+    - improvements on some
+    - New graph-coloring register allocator
+      - Packs variables better in stack frames, resulting in some
+        speed up
+    - Block allocation for closures is ommitted from new compiler
+      - Used to allocate a group of created closures, saving on
+        allocation costs
+  - 15% - 22% improvement on 64-bit (x86) hardware in benchmark run times
+  - 22% - 27% improvement on 32-bit (x86) hardware
+  - Compile times
+    - Set out to be within a factor of 2 of the original
+    - Worst case, 1.75x slower, on 64-bit x86
+      - This is in part due to the slower register allocator
+
+- Final thoughts
+  - I can't help but think that a better register allocator contributed 
+    most to the runtime speedups. However, one can't discount the fact
+    that the new register allocator was possible in part due to the 
+    large refactoring of the optimization steps into easier to digest
+    and debug, smaller passes. One can only assume that organizing a
+    compiler like this for recent hardware will be a win, with
+    relatively little cost.
