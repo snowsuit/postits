@@ -1,3 +1,68 @@
 #+Title: Dynamo: Amazon’s Highly Available Key-value Store
 #+Property: url http://www.allthingsdistributed.com/files/amazon-dynamo-sosp2007.pdf
 #+Filetags: :database:amazon:dynamo:high availability:key value:
+
+* Notes
+The various portions I found interesting enough to mention.
+** Background
+High availability
+** SLAs
+- Use 99.9 percentile, want good service for everyone not just majority.
+** Architecture
+- Uses consistent hashing
+- Decentralized storage
+- Physical nodes get assigned N virtual nodes, can control resource utilization
+  more easily
+- Nodes can come and go, only affecting a their neighbor nodes
+- Supports failure detection, load balancing, replication, failure recovery,
+  hinted handoff, etc
+- Every service runs its own Dynamo cluster for its data
+** Replication
+- Data written to multiple nodes, operations on keys are highly tunable
+  depending on requirements
+- Data is replicated between data centers
+- Keys are a preference list of nodes, can require operations have to go through
+  those
+** Data Versioning
+- Vector clocks
+- Supports last write wins
+- A key can have multiple versions of data associated with it
+- Application logic has to handle conflicts
+- Latencies can be infinite in an eventually consistent store
+- Most data doesn't need relational semantics or ACID guarantees
+** Failures: Hinted Handoff
+- If a machine dies, its data can be replicated to other nodes
+- Ensures the datastore is still writable in this situation
+- Uses acive anti entropy based on Merkle trees to keep data consistent during
+  failure scenarios
+- Nodes use a gossip protocol as well to keep in touch
+** Membership and Failure Detection
+- System assumes if a node dies it's probably coming back soon, so doesn't
+  immediately move all of its data around
+- If node is really gone, administrator can tell the system to forget about it
+- When a node comes in to the ring it gets assigned a key space and its data is
+  bootstrapped from other nodes in the ring
+- If a node stops responding, it's operations are not sent to it in order to
+  keep SLAs, periodically poking the node to see if it's back
+** Implementation
+- In Java
+- Data storage backends are pluggable, BDB, MySQL, in-memory
+- BDB main one used as of this writing
+- Evented architecture similar to SEDA, using Java NIO of course
+** Experiences and Lessons Learned
+- Data conflict resolution in business logic
+- Often use LWW apparently?
+- High performance read engine - always writable, but generally way more reads
+  than writes
+** Ensuring Uniform Load Distribution
+- How you distribute vnodes very important to ensure load is evenly distributed
+  across nodes
+- Performed several distribution experiments
+** Divergent Versions
+- In a 24 hour period:
+  - 99.94% of data saw only 1 version
+  - 0.00057% saw 2 versions
+  - 0.00047% saw 3 versions
+  - 0.00009% saw 4 versions
+- Divergent versions very rare
+
