@@ -1,0 +1,23 @@
+#+Title: Riak at Riot Games: Tracking Millions of Ganks in Near Real Time
+#+Author: Garrett Eardley
+#+Property: url http://www.infoq.com/presentations/riak-game-scale
+#+Filetags: :database:riak:riot games:dynamo:high availability:key value:
+
+- Data model challenges (14:25 - 25:00)
+  - Complex queries - 2i
+  - Conflict resolution
+    - Redundant results for processing same data multiple time - LWW
+    - Append-only data, like logs - set union of entries
+    - aggregate stats, sets of counters - no way to resolve conflicts as is.
+      - Solution 1: send deltas and performs set union, downside is it is
+        expensive
+      - Solution 2: truncate deltas per interval (still can conflict after an
+        extended netsplit). Overall, loosing writes is OK for stats.
+- Single, physical, data center on US West Coast, so no replication experience
+- K/V only! 2i and MR are expansive and not recommended
+- Riak > Cassandra because it gives you a choice of how to resolve conflicts,
+  whereas Cassandra is LWW-only (31:26 - 31:42)
+- Data stored as binary, not JSON (31:50 - 32:10)
+- They use LevelDB backend
+- Total stored data size: 45 TB, compressed
+- Both, legacy MySQL and new Riak are still in use (33:15 - 33:40)
