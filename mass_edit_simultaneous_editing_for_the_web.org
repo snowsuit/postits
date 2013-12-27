@@ -1,0 +1,50 @@
+#+Title: Mass Edit: Simultaneous Editing for the Web
+#+Author: Robert C. Miller, David F. Huynh, Nicole Bieber, Greg Little
+#+Property: url http://groups.csail.mit.edu/uid/projects/mass-edit/uist08-massedit.pdf
+#+Property: demo http://groups.csail.mit.edu/uid/mass-edit/
+#+Filetags: :ui:simultaneous editing:text editing:pattern matching:
+
+* Andrew's Notes
+- We often need to make changes to lots of structurally similar text,
+  but it's tedious
+- Simultaneous editing (e.g. multiple cursors) can help here.
+  - SE uses records (maybe lines, paragraphs, a specific pattern)
+  - Very effective in homogeneous editing
+- Mass Edit uses a technique based on clustering
+- Related Work
+  - PBD (programming by demonstration). The user does a bunch of
+    edits, the system creates a program out of it to be applied
+    - TELS, Eager, DEED, and SmartEDIT
+  - Visual Awk
+  - They have previously used clustering for find and replace:
+    :PROPERTIES:
+    :Citation: Miller, R. C. and Marshall, A. A. Cluster Based find & replace. In Proc CHI 2004, 57-64.
+    :END:
+- (I'm not concerned about the UI aspects, only the algorithmic, so
+  I've omitted notes on these sections)
+
+- Algorithm
+  1. Extract structure into runs:
+     - Ex: "UBD_NAME--55" is converted into the structural sequence
+           alphanumerics, punctuation, alphanumerics, punctuation, punctuation,
+           digits.
+  2. The lines are then clustered using Edit Distance between their
+     structural sequences as the distance metric
+     - Generated greedily using an arbitrary line as the seed
+     - Rank lines by edit distance
+     - Take clusters where significant gaps occur
+       - Considered significant if it exceeds the average gap in a
+         window by more than a threshold
+     - Before the gap belong with seed, then recurse
+  3. Cursor position generalized =(segment, character)=
+     - Negative indexes on character are from the right (as in python)
+     - The character offset that produces the smallest change is used,
+       seeking a "minimum description"
+     - Ex: Tom|as Poggio    => cursor position = (0, -2)
+           Would result in a cursor for "Patrick Winston" like so:
+           Patri|ck Winston
+
+- Discussion
+  - The automatic clustering sometimes produces more clusters than
+    needed, especially if a user is only looking to edit, say the end
+    of a line
