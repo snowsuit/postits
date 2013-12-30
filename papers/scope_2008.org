@@ -1,0 +1,49 @@
+#+Title: SCOPE: Easy and Efficient Parallel Processing of Massive Data Sets
+#+Author: Ronnie Chaiken, Bob Jenkins, Per-Åke Larson, Bill Ramsey, Darren Shakib, Simon Weaver, Jingren Zhou
+#+Property: url http://research.microsoft.com/en-us/um/people/jrzhou/pub/Scope.pdf
+#+Filetags: :hadoop:mapreduce:cosmos:microsoft:bigdata:big data:
+
+* Notes
+** Introduction
+Processing big data important blah blah, many current solutions require writing
+code or knowing a lot about he system (Hadoop).  SCOPE is a declarative language
+that looks a lot like SQL that makes it easy to perform queries on massive
+amounts of data.
+
+Built on top of Cosmos which is like Hadoop + BigTable and jobs are described in
+terms of a DAG.
+** Platform Overview
+- SCOPE is a script which gets compiled, with optimizations, and turned into a
+  Cosmos job and executed.
+- Cosmos provides availability, reliability, scalability, performance, and
+  cheaper than other options (measured in $/gigabyte).
+- Cosmos is petabyte scale datastore that executes a DAG.
+** SCOPE Scripting Language
+- Like SQL but with C# extensions.
+- Can even inline C# code.
+- Can be extended via C# code, such as file format extractors.
+- The data is typed.
+- Composable, output of one SCOPE script can be input to another.
+- Much of a SCOPE script is translated directly to C#, giving C# semantics and
+  availability of operators from C#.
+- Provides M/R operators.
+- Compiled to DAG for Cosmos.
+- Optimizer tries to find better plans for queries.
+  - Based on Cascades framework.
+  - Tries to find best way to partition data.
+  - Will remove columns that are generated but never used.
+- Runtime optimizations
+  - Cosmos tries to ensure that data is scheduled at least within the same rack
+    as the data it lives in to avoid transferring outside the rack.
+  - Partial aggregation can be applied at various levels, so it is.
+  - Tries to ensure a data is evenly distributed to avoid overloading a single
+    machine.
+** Experiments
+Look good!  Otherwise this paper wouldn't have been written.
+** Conclusion
+SCOPE is good because it lets you do in very few lines of code what would take
+implementing in Java or C++ many lines.  Cosmos is also better than M/R because
+M/R is too rigid.  A DAG is more expressive.
+
+Web-scale!
+
