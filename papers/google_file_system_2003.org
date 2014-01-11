@@ -1,0 +1,83 @@
+#+Title: The Google Filesysetm
+#+Author: Sanjay Ghemawat, Howard Gobioff, and Shun-Tak Leung
+#+Property: url http://static.googleusercontent.com/media/research.google.com/en//archive/gfs-sosp2003.pdf
+#+Filetags: :filesystems:dfs:gfs:google:bigdata:big data:
+
+* Notes
+** Introduction
+Google's data processing needs are growing and it needs a scalable, reliably,
+fault tolerant method of storing data.  GFS was built with the Google-specific
+applications in mind and tailored for their needs.  As such, GFS does not
+implement a full POSIX file system layer, but rather create, rename, read, write
+and record append functions.  It is designed for reads and record appends to be
+very fast with writes slower.  It is also designed for very large, multi
+gigabyte files rather then many small files.  It is also optimized for reading
+through a large file sequentially.
+** Design Overview
+** Assumptions
+   - Lots of commodity hardware.
+   - Few millions files (modest amount), typically 100MB or larger.
+   - Read workloads mostly streaming and small random reads.
+   - Write workloads mostly appends.
+   - Mulitple clients concurrently appending same file.
+   - High sustained bandwidth
+** API
+Not a POSIX API but a library API.
+** Architecture
+   - Single master, multiple chunkservers.
+   - Clients interact with master to get which chunkserver to talk to and the
+     rest of the interactions are directly with the chunkserver.
+   - Chunkservers maintain data about their chunks, including checksums.
+   - Master maintains metadata for files to chunk, and chunks to chunkservers.
+   - Only files to chunks mapping is persistent.  Chunkservers register which
+     chunks they own upon connection to master.
+   - The master tells clients which chunkservers to talk to for the chunk they
+     want and the clients talk directly.  A chunkserver maintains a lease on the
+     chunk that the master can revoke.
+   - Chunksize is 64MB.
+   - Master's metadata is small (tens of megs) and stored to disk + remote
+     machines via a log. Checkpointed of course.
+** Consistency Model
+   - Somewhat loose consistency model.
+   - Concurrent writes to same portion of chunk is undefined but consistent (all
+     chunkservers will see the same undefined data).
+   - Concurrent appends are defined but not consistent.  The ordering across
+     chunkservers of the appended rows can be different.  Could also have
+     duplicate entries.  And padding.
+   - If the appended record overflows the chunk, it's padded and written to a
+     new chunk.
+   - Applications need to be able to handle padding and de-dup (if it's
+     important to them).
+** System Interaction
+   - Chunkservers maintain a lease as owner of a chunk.
+   - Clients writing get sent to the owner, can read from any.
+   - Client control messages go to owner, but data writes go to the closest
+     chunkserver that owns a replica of that chunk and it replicates to its
+     closest chunkserver, etc.  After replication is done, client sends write op
+     to the chunk owner and it returns success if all secondaries successfully
+     write.
+   - Supports snapshotting in lazy fashion.
+   - Master decides which chunkserver gets which chunks.  Can move chunks around
+     as needed for rebalancing.
+   - If replicas get lost, handles rereplicating.  Priority given to hot chunks
+     and chunks with the most replicas gone.
+** Garbage Collection
+   - Data garbage collected lazily, partially for simplicity partially for
+     protection against messing up.
+   - Deleted files first become renamed a special name, can undue the delete by
+     renaming.  New name includes timestamp.
+   - After a few days the file is deleted from the master's metadata.
+   - Periodically the chunkservers check-in with the master.  They send a random
+     few listings of chunks they own, if the chunks don't map to files the
+     master tells it to delete the chunk.  This way the cluster slowly deletes
+     data over time and does not actually have to worry about if a chunk server
+     is failed and comes back with deleted chunks.
+** Performance
+Fast enough, duh.
+** Conclusion
+Works well.  Google very successful with the system.  Benefits from application
+authors writing code for how GFS works and GFS devs providing semantics for how
+app devs want to use it.
+
+
+
