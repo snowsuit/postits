@@ -1,0 +1,81 @@
+#+TITLE: DTN: An Architectural Retrospective
+#+AUTHOR: Fall, Kevin; Farrell, Stephen
+#+PROPERTY: url http://web.cs.ucla.edu/classes/cs217/2008DTN_Perspective.pdf
+#+FILETAGS: :dtn:space:networking:
+
+* Summary
+As the name says, this paper is a retrospective of the DTN architecture.  It
+covers the protocol (BUNDLE), routing strategies, package custody, security and
+future work.  The conclusion is that the existing DTN architecture is correct
+and working well.  There also a sense in the paper that it's too early to judge
+some aspects of the architecture because DTNs that would utilize it are not
+sufficiently deployed.  The biggest acknowledged areas for more work are
+security and congestion control.
+* Section Notes
+** Introduction
+- DTN usecases have grown since the original work started, partially do to
+  mobile ad-hoc networks (MANETs).
+** DTN's Capabilities
+- Started as architecture for the Interplanetary Internet (IPN) but interest in
+  wireless sensor networks (WSNSs) pushed the need for DTN as well.
+- DTN designed to deal with not only disruption and delays in networking but
+  also a framework for heavily heterogeneous networks found in sensor networks.
+** Naming, Addressing and Binding
+- Naming an incredibly important part of any network.
+- Using URLs seems to add a lot of complexity but perhaps all that complexity is
+  needed to address how unpredictable the naming in DTNs needs to be, especially
+  taking into account the heterogeneous networks.
+** DTN PDUs: bundles
+- "bundle" comes from the idea of minimizing round trips by bundling as much
+  together as possible.
+- I do not buy the claimed value of using real-time timestamps in protocol.  It
+  requires the clocks to be synchronized which seems unrealistic to me,
+  especially if one is targeting deep space (why bias toward some earth value of
+  time?).  I think a TTL would make more sense, and represent the same thing
+  from the sender's perspective.  A TTL can be constructed with an expiration
+  date in mind, then each node in a DTN can translate to/from the TTL locally.
+  This is what various RPC protocols do: TTL between nodes, so their clocks
+  don't need to be in sync, and translate to local time on node so if the
+  machine pauses or crashes, etc, it can still determine if the item has
+  expired.
+- Important point that DTN routing requirements are no in bandwidth but in bytes
+  stored, especially for the IPN where the idea is to store data until it can be
+  moved to the next hop.
+- SDNVs seem to be the same encoding as varint in Protobuf.
+- The string dictionary solution to reducing package size seems clever in a good
+  way.
+- I think it is unfortunate that error detection does not exist at the bundle
+  level.  Bit-level error detection is pushed to the application, but given that
+  the cost of shipping data is assumed to be expensive and possibly impossible
+  to re-ship, making this and end-to-end issue at the application layer seems
+  like an oversight.  The point that "bad data might still be worth shipping" is
+  valid, but a policy question rather than if the ability to detect bad data
+  should exist at all.
+** Routing
+- Probably one of the most interesting and diverse aspects of DTNs.  WSNs likely
+  have hugely different routing costs than the IPN.
+- A lot of work to be done here (as of 2008, at least).
+** Custody and Congestion
+- Again, a lot of work to be done here.
+- Congestion control has very few good solutions given storage is the limiting
+  factor.  In the end you have to decide to throw something out to take
+  something new or to not take something new.
+** Security
+- This seems like one of the weakest points in the existing architecture.  The
+  authors didn't predict that they would need to sign/encrypt the payload of the
+  bundle.  Their heart is in the right place: things like WSNs are often CPU
+  challenged and might not be able to afford to do any of the encryption work.
+- This might be an example of DTN trying to accommodate too much, maybe the IPN
+  and WSN are far enough apart as usecases that having one thing that satisfies
+  them both is too much.
+- Key management also not handled at all.  Storage could be an issue there,
+  which is already tight in many of these systems.
+- Definitely needs a lot of work and could possibly necessitate creating an
+  alternative to the Bundle protocol.
+** Future Work
+- Routing, congestion, and security, basically.
+** Conclusion
+- DTN is young and not deployed enough (as of 2008) to say too much.
+- I think the lack of error checking and using wall-clock time for expiration
+  are the biggest weaknesses.
+
