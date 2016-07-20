@@ -1,6 +1,7 @@
 #+TITLE: TensorFlow: Large-Scale Machine Learning on Heterogeneous Distributed Systems
 #+AUTHOR: Google Research
 #+PROPERTY: url http://download.tensorflow.org/paper/whitepaper2015.pdf
+#+PROPERTY: published_year 2015
 #+FILETAGS: :machine learning:ml:tensorflow:google:distributed:
 
 * Summary
@@ -65,6 +66,8 @@ tooling designed to understand a TensorFlow model and performance profiling.
 - The lossy compression is cool.  The ML algorithms are already dealing with
   poor quality data, so there isn't a big problem in, for example, squashing a
   32 bit float into a 16 bit float.
+- The asynchronous kernels is interesting -- passing a continuation around to be
+  executed when ready.
 ** Status and Experience
 - As expected: debugging these things is hard.  One has to really know if an
   output makes sense in the model or not.  I have no idea how they really handle
