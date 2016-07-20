@@ -1,0 +1,91 @@
+#+TITLE: TensorFlow: Large-Scale Machine Learning on Heterogeneous Distributed Systems
+#+AUTHOR: Google Research
+#+PROPERTY: url http://download.tensorflow.org/paper/whitepaper2015.pdf
+#+FILETAGS: :machine learning:ml:tensorflow:google:distributed:
+
+* Summary
+TensorFlow is an interface for expressing machine learning algorithms.  There is
+also a reference implementation that has been open sourced.  TensorFlow is
+designed to run across a range of hardware, such as CPUs, GPUs, and even mobile
+devices as well as being a distributed framework.  TensoFlow is a generic
+framework that can be used to express a range of ML algorithms.  TensorFlow is
+in use at Google and is replacing their previous tool called DistBelief.
+
+The first half of the paper is about how the TensorFlow graphs are constructed
+and executed.  The second half of the paper is about the experiences, including
+tooling designed to understand a TensorFlow model and performance profiling.
+* Section Notes
+** Introduction
+- They reference the Go (the game) work, which would eventually turn into the
+  news worthy match with the Go world champ.
+- Interesting that TensorFlow can be run on mobile phones.  Is it currently?  I
+  thought all my data was shipped to Google and they processed it centrally.  I
+  wonder if Apple will aim for something that can run on the phone, they have
+  been making a big stink about privacy lately.
+- The scale that TensorFlow can run at ("hundreds of billions of parameters on
+  hundreds of billions of example records using many hundreds of machines") is
+  impressive.
+- There isn't much mention of what kind of Google technologies are used
+  underneath, perhaps because it isn't important and perhaps because of the
+  existing reference implementation.  Is TensorFlow a complete departure from
+  MapReduce at this point?  Are they using the same underlying frameworks like
+  other organizations do with Spark and friends?
+** Programming Model and Basic Concepts
+- Important to know: a tensor is the value that flows along the edge of a graph
+  node.
+- It always sucks that things like loops and retries get in the way of a
+  beautiful graph execution.
+- The interface seems quite elegant.  Make a graph then run it a bunch of times
+  with different inputs.
+- Variables are a nice "hack".  A node that just remembers stuff, because
+  "tensors" are transient.
+** Implementation
+- I love an API that can seamlessly scale from single machine to hundreds of
+  machines.
+- Interesting that the placement of work on nodes is done by first simulating
+  the run and picking nodes.  It runs all possible devices on a node and picks
+  the predicted best set.
+- I like how the cross-device communication graph is made by generating a graph
+  as if it could run on one big machine, then adding "send" and "recv" nodes to
+  the graph where the communication will happen.  This also makes the execution
+  not require a master coordinator.  The master process does do periodic health
+  checks in order to handle faults.  And they can have "Save" and "Restore"
+  nodes in the graph to handle restarting after a fault.
+** Extensions
+- It would be tempting to make a graph opaque, a black box, but it's really
+  handy that one can start execution at any point in the graph and offer initial
+  data for which that point in the graph was expecting.
+- Frustrating that one needs control flow but hard to get around in such a
+  generic framework.  The control flow operations, as described, seem kind of
+  awkward to use but are probably hidden behind some abstractions that make it
+  less awkward.
+- I'm assuming "containers" are often backed by some kind of database, although
+  it's vague.
+** Optimizations
+- The lossy compression is cool.  The ML algorithms are already dealing with
+  poor quality data, so there isn't a big problem in, for example, squashing a
+  32 bit float into a 16 bit float.
+** Status and Experience
+- As expected: debugging these things is hard.  One has to really know if an
+  output makes sense in the model or not.  I have no idea how they really handle
+  huge graphs and get a sense for if its output makes sense.
+** Common Programming Idioms
+- I get the feeling that there is a lot to learn in the idioms and tricks that
+  one will be using with TensorFlow.
+** Performance
+- Nothing here.
+** Tools
+- The debugging tools are really impressive and seem like a requirement for
+  doing large scale ML.
+- The EEG tool has an insane amount of resolution across the various hardware
+  offerings.  I am surprised it is not too expensive to run.  I assume that EEG
+  will eventually flow back into TensorFlow to give the user a better overview.
+** Future Work
+- Really interested to see how this plan to make a graph a reusable component
+  pans out.  Given the common subexpression elimination they do, seems like this
+  should be really straight forward to implement.
+** Related Work
+- TensorFlow seems like it clearly built on top of the existing best tools to be
+  better in almost all ways.
+** Conclusions
+- Yep, Google makes crazy stuff.
