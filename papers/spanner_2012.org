@@ -1,0 +1,96 @@
+#+TITLE: Spanner: Google's Globally-Distributed Database
+#+AUTHOR: Google Inc.
+#+PROPERTY: url https://www.usenix.org/system/files/conference/osdi12/osdi12-final-16.pdf
+#+PROPERTY: published_year 2012
+#+FILETAGS: :google:database:distributed:relational:bigtable:megastore:
+
+* Summary
+Spanner is a the culmination of many years of implementing distributed databases
+as Google.  It provides a globally consistent semi-relational model with
+desirable performance characteristics.  One of the major innovations in Spanner
+is its TrueTime API, which exposes clock uncertainty and is used to execute
+transactions.  Spanner has replaced the MySQL sharded cluster in Google's ad
+backend called F1 with positive results.
+* Section Notes
+** Introduction
+- "Spanner is designed to scale up to millions of machines across hundreds of
+  datacenters and trillions of database rows" -- That is crazy large.  I wonder
+  where the bottlenecks end up?  The hundreds of datacenters is especially
+  interesting.  In Cassandra we start to see issues before we hit even 10
+  datacenters because all of the data is replicated to all of the datacenters.
+  The amount of data to replicate per write is linear to the number of
+  datacenters.  That becomes a lot fairly quickly.  What I think Spanner does is
+  each datacenter does not get a whole copy of the data, like in Cassandra, but
+  rather the hundreds of datacenters are treated like a large pool of machines
+  and the replica count of each piece of data is quit small.  The paper states
+  that most users only want their data across 3 - 5 datacenters.
+- Spanner seems to have started out more like a BigTable with transactions and
+  become a full multi-versioned database along the way.
+- Applications have a lot of control over their replication, something I think
+  is missing from a lot of databases these days.
+** Implementation
+- Given how Spanner scales, it's a flip from most places wanting a DB per
+  service or similar.  I wonder if it becomes difficult to not want to expose
+  ones data to another service directly via the DB, especially if one really
+  wants a transaction between them.
+- The hierarchy sounds like: universe -> zone -> table -> tablet -> directory ->
+  fragment (not exactly sure about where tablet goes).
+- The ~Movedir~ operation is where most existing attempts at sharding fall flat.
+  The location of data in Riak, Cassandra, as sharded PostgreSQL is fixed which
+  makes dealing with hotspots difficult.  In a system where one can move data
+  between systems, one could give a single machine the hotspot and just let it
+  handle that.  There seem to be a lot of things that can be done with the
+  ability to move ownership of data around in a controlled way.  Consistent
+  hashing is so simple it's hard to not want to use it, but in most
+  implementations one gives up a lot of control in where data should be placed.
+- Fascinating to read that many applications use MegaStore, despite it being
+  slow just because it's easier.
+- I'm a fan of the view that application developers should overuse a safe tool
+  like transactions and then the performance issues can be centrally solved.
+- Seems like one has to really understand how their data should be stored for
+  Spanner to really pay off "INTERLEAVE IN".  Perhaps this is what has been
+  missing in previous attempts at something like Spanner.  I think VoltDB does
+  something similar where one has to really think about what queries they want
+  to do.
+** TrueTime
+- I wonder if TrueTime took a lot of convincing internally.  Reading about it in
+  the paper feels like "oh that's brilliant", but that's only with the benefit
+  of reading the paper about a successful tool.
+- TrueTime seems smart but it makes me a tiny-bit uneasy that if a stray machine
+  gets a really skewed clock it could break some assumptions.
+** Concurrency Control
+- The built in snapshot isolation seems like a pleasant solution that naturally
+  fits in the model.  It seems like Read Committed would actually have been more
+  difficult to implement.
+- On the other hand, not being able to read-your-writes in a transaction feels
+  odd.
+** Evaluation
+- Google uses AMD chips?  Second source is a real thing!
+- The latencies in Table 4 are clearly longer than a standard RDBMS but it is
+  better than Megastore and the wins are so big that it seems like it doesn't
+  matter.  Also looks like even though latency can be high, its throughput is
+  much better as well.
+- Manually sharding MySQL sounds miserable.  The last reshard took over two
+  years.
+- Spanner seems like an all around win for the F1 team.
+** Related Work
+- DynamoDB seems like a finger painting next to Spanner.  CockroachDB was
+  created as a reaction to Spanner but seems fairly primitive next to it as
+  well.  Few places seem to be able to afford the people and have the motivation
+  to create something like Spanner.  Spanner feels very "Google", in taking a
+  problem that is effecting a lot of people and provide an expensive,
+  thoughtful, handmade, answer to it.
+- Conflicting Paxos groups is probably why DataStore rate limits how often an
+  entity can be updated.
+- The rest of the industry and academia feels so behind relative to what Google
+  has done with Spanner.
+** Future Work
+- Surprised to hear that doing parallel reads requires a lot more thought.  I
+  wonder what that would drop the latency down to.
+- The underlying datastore performs poorly with complex SQL queries, I wonder if
+  utilizing an existing SQL database as the underlying store (such as
+  PostgreSQL) would have made that better, but at what cost?
+** Conclusions
+- 5 year long project, that is quite a commitment from management.  I wonder how
+  management rationalized creating Spanner where other companies would just deal
+  with eventual consistency at this scale.
