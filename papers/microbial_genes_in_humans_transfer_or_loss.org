@@ -1,0 +1,22 @@
+#+Title: SCOPE: Easy and Efficient Parallel Processing of Massive Data Sets
+#+Author: Steven L. Salzberg, Owen White, Jeremy Peterson, Jonathon A. Eisen
+#+FILETAGS: :biofix:genomie:eukaryote:prokaryote:transfer:lateral transfer:gene loss:
+#+PROPERTY: year 2001
+
+* Notes
+- Asking the question: where did genes found only in human and prokaryotes come
+  from?  Are they the result of genes horizontally transferring into humans from
+  bacteria or did they exist in more organisms and were lost over time but not
+  in humans?
+- Methodology is to do a bunch of blast searches between human and bacteria and
+  find genes that exist in both then filtering out proteins that exist in other
+  non-vertebrate.
+- New evidence suggests that lateral gene transfer is important for evolution of
+  prokaryotes.
+- Found only a handful of genes that exist only in bacteria and human.
+- Number of genes goes down as more and better data is implied which suggests
+  that they aren't a real thing, they should stay around the same if they are a
+  real phenomenon.
+- It's actually more likely that these can be explained due to gene loss, either
+  the genes were removed from non-vertebrate genomes or they mutated to the
+  point of not being recognizable.
